@@ -6,7 +6,8 @@ use App\Models\CrawlerQueue;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\ResponseInterface;
 use Spatie\Crawler\CrawlObservers\CrawlObserver as SpatieCrawlObserver;
-
+use GuzzleHttp\Exception\RequestException;
+use DOMDocument;
 
 class ConsoleObserver extends SpatieCrawlObserver
 {
@@ -35,14 +36,32 @@ class ConsoleObserver extends SpatieCrawlObserver
     {
         $this->console->total_crawled++;
 
-        // item acabou de ser arquivado, mas não expirado.
         $item = CrawlerQueue::onlyTrashed()->url($url)->first();
+        // if ($item->count()) { 
 
-        if ($item->count()) {
-            $item->html = $response->getBody();
+        $doc = new DOMDocument();
+        @$doc->loadHTML($response->getBody());
+        //# save HTML 
+        $content = $doc->saveHTML();
+        //# convert encoding
+        $content1 = mb_convert_encoding($content,'UTF-8',mb_detect_encoding($content,'UTF-8, ISO-8859-1',true));
+        //# strip all javascript
+        $content2 = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $content1);
+        //# strip all style
+        $content3 = preg_replace('/<style\b[^>]*>(.*?)<\/style>/is', '', $content2);
+        //# strip tags
+        $content4 = str_replace('<',' <',$content3);
+        $content5 = strip_tags($content4);
+        $content6 = str_replace( '  ', ' ', $content5 );
+        //# strip white spaces and line breaks
+        $content7 = preg_replace('/\s+/S', " ", $content6);
+        //# html entity decode - ö was shown as &ouml;
+        $text = html_entity_decode($content7);
+        
+        $item->html = $content1;
+        $item->text = $text;
 
-            $item->save();
-        }
+        $item->save();
 
         $this->console->info("Crawled: ({$this->console->total_crawled}) {$url} ({$foundOnUrl})");
     }

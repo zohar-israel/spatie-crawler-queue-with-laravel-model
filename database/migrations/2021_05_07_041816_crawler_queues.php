@@ -17,10 +17,12 @@ class CrawlerQueues extends Migration
             $table->id();
 
             $table->string('url_hash', 128);
+            $table->text('site');
             $table->text('url');
 
             $table->longText('url_class');
             $table->longText('html')->nullable()->collation('utf8mb4_bin');
+            $table->longText('text')->nullable()->collation('utf8mb4_bin');
 
             $table->expires();
             $table->index('url_hash');

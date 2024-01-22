@@ -18,15 +18,17 @@ class CrawlerCacheQueue implements CrawlQueue
      * @var int|null
      */
     protected mixed $ttl = NULL;
+    protected mixed $site = "";
 
     /**
      * Defines an instance of the CacheQueue
      *
      * @param int|null $ttl
      */
-    public function __construct(int $ttl = NULL)
+    public function __construct($site, int $ttl = NULL)
     {
         $this->ttl = $ttl ?? config('crawler.cache.ttl', 86400); // one day
+        $this->site = $site;
     }
 
     /**
@@ -43,6 +45,7 @@ class CrawlerCacheQueue implements CrawlQueue
             $item = new CrawlerQueue;
 
             $item->url_class  = $crawlUrl;
+            $item->site  = $this->site;
             $item->expires_at = $this->ttl;
 
             $item->save();
@@ -60,16 +63,16 @@ class CrawlerCacheQueue implements CrawlQueue
     public function markAsProcessed(CrawlUrl $crawlUrl): void
     {
         // @OBS deleted_at = soft delete = processado
-        CrawlerQueue::url($crawlUrl)->delete();
+        CrawlerQueue::where('site',$this->site)->url($crawlUrl)->delete();
     }
 
     public function getPendingUrl(): ?CrawlUrl
     {
         // Any URLs left?
         if ($this->hasPendingUrls()) {
-            $random = CrawlerQueue::inRandomOrder()->first();
-
-            return $random->url_class;
+            return  CrawlerQueue::where('site',$this->site)->first()->url_class;
+            // $random = CrawlerQueue::inRandomOrder()->first();
+            // return $random->url_class;
         }
 
         return NULL;
@@ -77,12 +80,12 @@ class CrawlerCacheQueue implements CrawlQueue
 
     public function has(UriInterface|CrawlUrl|string $crawlUrl): bool
     {
-        return (bool) CrawlerQueue::withTrashed()->url($crawlUrl)->count();
+        return (bool) CrawlerQueue::where('site',$this->site)->withTrashed()->url($crawlUrl)->count();
     }
 
     public function hasPendingUrls(): bool
     {
-        return (bool) CrawlerQueue::count();
+        return (bool) CrawlerQueue::where('site',$this->site)->count();
     }
 
     public function getUrlById($id): CrawlUrl
@@ -90,15 +93,15 @@ class CrawlerCacheQueue implements CrawlQueue
         if (!$this->has($id)) {
             throw new UrlNotFoundByIndex("Crawl url {$id} not found in collection.");
         }
-        $item = CrawlerQueue::withTrashed()->url($id)->first();
+        $item = CrawlerQueue::withTrashed()->where('site',$this->site)->url($id)->first();
 
         return $item->url_class;
     }
 
     public function hasAlreadyBeenProcessed(CrawlUrl $crawlUrl): bool
     {
-        $inQueue   = (bool) CrawlerQueue::url($crawlUrl)->count();
-        $processed = (bool) CrawlerQueue::onlyTrashed()->url($crawlUrl)->count();
+        $inQueue   = (bool) CrawlerQueue::where('site',$this->site)->url($crawlUrl)->count();
+        $processed = (bool) CrawlerQueue::onlyTrashed()->where('site',$this->site)->url($crawlUrl)->count();
 
         if ($inQueue) {
             return FALSE;
@@ -114,8 +117,8 @@ class CrawlerCacheQueue implements CrawlQueue
 
     public function getProcessedUrlCount(): int
     {
-        $processed = CrawlerQueue::onlyTrashed()->count();
-        $pending   = CrawlerQueue::count();
+        $processed = CrawlerQueue::onlyTrashed()->where('site',$this->site)->count();
+        $pending   = CrawlerQueue::where('site',$this->site)->count();
 
         return $processed - $pending;
     }

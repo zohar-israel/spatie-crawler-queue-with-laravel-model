@@ -8,9 +8,11 @@
         "php": "^8.0",
         "fideloper/proxy": "^4.4",
         "fruitcake/laravel-cors": "^2.0",
+        "guzzlehttp/psr7": "^2.6",
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
         "mvdnbrk/laravel-model-expires": "^1.8",
+        "orhanerday/open-ai": "^5.0",
         "spatie/crawler": "^7.0"
     },
     "require-dev": {

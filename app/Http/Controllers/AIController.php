@@ -8,7 +8,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Orhanerday\OpenAi\OpenAi;
 
-class Controller extends BaseController
+class AIController extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
@@ -51,6 +51,6 @@ class Controller extends BaseController
         // decode response
         $d = json_decode($chat);
         // Get Content
-        echo($d->choices[0]->message->content);
+        // echo($d);//->choices[0]->message->content);
     }
 }

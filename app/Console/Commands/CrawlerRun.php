@@ -45,10 +45,12 @@ class CrawlerRun extends Command
         $queue = null;
         $site = $this->argument('site');
 
+        if(substr($site, -1) === "/") $site .= "/";
+        
         if (is_null($queue)) {
             $this->info('Preparing a new crawler queue');
 
-            $queue = new CrawlerCacheQueue(86400); // one day
+            $queue = new CrawlerCacheQueue($site, 86400); // one day
         }
 
         // Crawler
@@ -57,7 +59,7 @@ class CrawlerRun extends Command
         Crawler::create()
             ->setParseableMimeTypes(['text/html', 'text/plain'])
             ->addCrawlObserver(new ConsoleObserver($this))
-//            ->setCurrentCrawlLimit(200)
+           ->setCurrentCrawlLimit(3)
             ->setConcurrency(20)
             ->setCrawlQueue($queue)
             ->setCrawlProfile(new CrawlInternalUrls($site))
